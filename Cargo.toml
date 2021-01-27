@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.0"
+bstr = "0.2"
+gfa = "0.9"

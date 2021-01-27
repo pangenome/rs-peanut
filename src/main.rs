@@ -1,9 +1,38 @@
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, BufReader};
+use bstr::{io::*, ByteSlice};
 use std::path::Path;
+use std::str;
+
+use gfa::{
+    cigar::{CIGAROp, CIGAR},
+    gafpaf::{parse_gaf, GAFPath, GAFStep},
+    gfa::{Link, Orientation, Segment, GFA},
+    optfields::{OptFieldVal, OptFields, OptionalFields},
+};
 
 extern crate clap;
 use clap::{App, Arg};
+
+type GAF = gfa::gafpaf::GAF<OptionalFields>;
+
+fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
+    let cg = opts.get_field(b"cg")?;
+    if let OptFieldVal::Z(cg) = &cg.value {
+        CIGAR::from_bytestring(&cg)
+    } else {
+        None
+    }
+}
+
+fn get_id<T: OptFields>(opts: &T) -> f32 {
+    let id = opts.get_field(b"id").unwrap();
+    if let OptFieldVal::Float(id) = id.value {
+        id
+    } else {
+        0.0
+    }
+}
 
 fn main() -> io::Result<()> {
     let arguments = App::new("peanut")
@@ -23,6 +52,39 @@ fn main() -> io::Result<()> {
     if !gaf_file_exists {
         eprintln!("[peanut::main::error]: GAF file {} does not exist!", gaf_filename);
         std::process::exit(1);
+    }
+
+    let file = File::open(gaf_filename).unwrap();
+    let lines = BufReader::new(file).byte_lines().map(|l| l.unwrap());
+
+    for (i, line) in lines.enumerate() {
+
+        let fields: bstr::Split = line.split_str(b"\t");
+        if let Some::<GAF>(gaf) = parse_gaf(fields) {
+            let opt_fields = gaf.optional;
+            let cigar = get_cigar(&opt_fields).unwrap();
+            /*
+            let cigar_iter = cigar.iter();
+            if i == 77 {
+                for val in cigar_iter {
+                    println!("{}", val);
+                }
+            }
+            */
+            let id: f32 = get_id(&opt_fields);
+            /*
+            println!("{}\t{}\t{}\t{}\t{}\t{}", 
+                gaf.seq_name, 
+                gaf.seq_len, 
+                gaf.seq_range.0, 
+                gaf.seq_range.1, 
+                id,
+                cigar
+            );
+            */
+        } else {
+            eprintln!("Error parsing GAF line {}", i);
+        }
     }
 
     // File hosts must exist in current path before this produces output
