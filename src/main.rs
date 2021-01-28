@@ -1,17 +1,14 @@
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufReader};
+
 use bstr::{io::*, ByteSlice};
-use std::path::Path;
-use std::str;
 
 use gfa::{
-    cigar::{CIGAROp, CIGAR},
-    gafpaf::{parse_gaf, GAFPath, GAFStep},
-    gfa::{Link, Orientation, Segment, GFA},
+    cigar::{CIGAR, CIGAROp},
+    gafpaf::{parse_gaf},
     optfields::{OptFieldVal, OptFields, OptionalFields},
 };
 
-extern crate clap;
 use clap::{App, Arg};
 
 type GAF = gfa::gafpaf::GAF<OptionalFields>;
@@ -54,6 +51,8 @@ fn main() -> io::Result<()> {
         std::process::exit(1);
     }
 
+    // let E: char = '=';
+
     let file = File::open(gaf_filename).unwrap();
     let lines = BufReader::new(file).byte_lines().map(|l| l.unwrap());
 
@@ -62,34 +61,28 @@ fn main() -> io::Result<()> {
     let mut first_line_seen: bool = false;
 
     let mut total_seq_len: usize = 0;
-    let mut total_map_len: f64 = 0.0;
+    let mut total_map_len: usize = 0;
 
     let mut seq_name: String;
-    let mut seq_len: usize;
+    let mut seq_len: usize = 0;
     let mut map_start: usize = 0;
     let mut map_end: usize = 0;
     let mut map_id: f64 = 0.0;
+
+    let mut nuc_v: Vec<bool> = vec![false; 0];
+    let mut nuc_o: usize = 0;
 
     for (i, line) in lines.enumerate() {
         let fields: bstr::Split = line.split_str(b"\t");
         if let Some::<GAF>(gaf) = parse_gaf(fields) {
             let opt_fields = gaf.optional;
             let cigar = get_cigar(&opt_fields).unwrap();
-            /*
-            let cigar_iter = cigar.iter();
-            if i == 77 {
-                for val in cigar_iter {
-                    println!("{}", val);
-                }
-            }
-            */
-            map_id = get_id(&opt_fields) as f64;
+            
             // TODO Is there a faster way to do this? Seems super ugly.
             let chars: Vec<char> = gaf.seq_name.as_bytes().chars().collect();
             seq_name = chars.into_iter().collect();
             seq_len = gaf.seq_len;
             map_start = gaf.seq_range.0;
-            map_end = gaf.seq_range.1;
             /*
             println!("{}\t{}\t{}\t{}\t{}\t{}", 
                 gaf.seq_name, 
@@ -104,14 +97,78 @@ fn main() -> io::Result<()> {
                 first_line_seen = true;
                 cur_seq_name = seq_name;
                 cur_seq_len = seq_len;
+                nuc_v = vec![false; cur_seq_len];
+                let cigar_iter = cigar.iter();
+                let mut idx: usize = 0;
+                for val in cigar_iter {
+                    // we have seen a match!
+                    if matches!(val, gfa::cigar::CIGAROp::E) {
+                        // did we already mark this position?
+                        let nuc_b = nuc_v[(idx + map_start)];
+                        if nuc_b {
+                            nuc_o += 1;
+                        } else {
+                            nuc_v[(idx + map_start)] = true;
+                        }
+                    }
+                    if matches!(val, gfa::cigar::CIGAROp::E | gfa::cigar::CIGAROp::M | gfa::cigar::CIGAROp::X | gfa::cigar::CIGAROp::I) {
+                        idx += 1;
+                    }
+                }
             } else {
                 if seq_name != cur_seq_name {
+                    // finish the current one
                     total_seq_len += cur_seq_len;
+                    total_seq_len += nuc_o;
+                    total_map_len += nuc_o;
+                    /*
+                    println!("cur_seq_len: {}", cur_seq_len);
+                    println!("true: {}", nuc_v.iter().filter(|&b| *b == true).count());
+                    println!("seq_name: {}", seq_name);
+                    println!("cur_seq_name: {}", cur_seq_name);
+                    */
+                    total_map_len += nuc_v.iter().filter(|&b| *b == true).count();
+
+                    nuc_o = 0;
+                    nuc_v = vec![false; seq_len];
+                    cur_seq_len = seq_len;
+                    cur_seq_name = seq_name;
+                    let cigar_iter = cigar.iter();
+                    let mut idx: usize = 0;
+                    for val in cigar_iter {
+                        // we have seen a match!
+                        if matches!(val, gfa::cigar::CIGAROp::E) {
+                            // did we already mark this position?
+                            let nuc_b = nuc_v[(idx + map_start)];
+                            if nuc_b {
+                                nuc_o += 1;
+                            } else {
+                                nuc_v[(idx + map_start)] = true;
+                            }
+                        }
+                        if matches!(val, gfa::cigar::CIGAROp::E | gfa::cigar::CIGAROp::M | gfa::cigar::CIGAROp::X | gfa::cigar::CIGAROp::I) {
+                            idx += 1;
+                        }
+                    }
+                } else {
+                    let cigar_iter = cigar.iter();
+                    let mut idx: usize = 0;
+                    for val in cigar_iter {
+                        // we have seen a match!
+                        if matches!(val, gfa::cigar::CIGAROp::E) {
+                            // did we already mark this position?
+                            let nuc_b = nuc_v[(idx + map_start)];
+                            if nuc_b {
+                                nuc_o += 1;
+                            } else {
+                                nuc_v[(idx + map_start)] = true;
+                            }
+                        }
+                        if matches!(val, gfa::cigar::CIGAROp::E | gfa::cigar::CIGAROp::M | gfa::cigar::CIGAROp::X | gfa::cigar::CIGAROp::I) {
+                            idx += 1;
+                        }
+                    }
                 }
-                let map_len: f64 = (map_end as f64 - map_start as f64) * map_id;
-                total_map_len += map_len;
-                cur_seq_name = seq_name;
-                cur_seq_len = gaf.seq_len;
             }
         } else {
             eprintln!("Error parsing GAF line {}", i);
@@ -119,81 +176,21 @@ fn main() -> io::Result<()> {
     }
 
     // we have to add the last step
-    let map_len: f64 = (map_end as f64 - map_start as f64) * map_id;
-    total_map_len += map_len;
-    total_seq_len += cur_seq_len;
+    //println!("cur_seq_len: {}", cur_seq_len);
+    //println!("seq_len: {}", seq_len);
+    total_seq_len += seq_len;
+    total_seq_len += nuc_o;
+    //println!("nuc_o: {}", nuc_o);
+    total_map_len += nuc_o;
+    total_map_len += nuc_v.iter().filter(|&b| *b == true).count();
+
+    //println!("{}", nuc_v.iter().filter(|&b| *b == true).count() as f64);
 
     // println!("total_map_len: {}", total_map_len);
     // println!("total_seq_len: {}", total_seq_len);
 
-    let final_ratio: f64 = total_map_len / total_seq_len as f64;
+    let final_ratio: f64 = total_map_len as f64 / total_seq_len as f64;
     println!("{}", final_ratio);
 
-    // File hosts must exist in current path before this produces output
-    if let Ok(lines) = read_lines(gaf_filename) {
-        let mut cur_seq_len: u64 = 0;
-        let mut cur_seq_name: String = String::from("");
-        let mut first_line_seen: bool = false;
-
-        let mut total_seq_len: u64 = 0;
-        let mut total_map_len: f64 = 0.0;
-
-        let mut seq_name: &str;
-        let mut seq_len: u64;
-        let mut map_start: f64 = 0.0;
-        let mut map_end: f64 = 0.0;
-        let mut map_id: f64 = 0.0;
-
-        // Consumes the iterator, returns an (Optional) String
-        for line in lines {
-            if let Ok(ip) = line {
-                let gaf: String = String::from(ip);
-                let v: Vec<&str> = gaf.split("\t").collect();
-                seq_name = v[0];
-                seq_len = v[1].parse().unwrap();
-                map_start = v[2].parse().unwrap();
-                map_end = v[3].parse().unwrap();
-                let map_id_v: Vec<&str> = v[15].split(":").collect();
-                map_id = map_id_v[2].parse().unwrap();
-                // println!("{}\t{}\t{}\t{}\t{}", seq_name, seq_len, map_start, map_end, map_id);
-                if !first_line_seen {
-                    first_line_seen = true;
-                    cur_seq_name = seq_name.to_owned();
-                    cur_seq_len = seq_len;
-                } else {
-                    // do we have a change of chromosome?
-                    if seq_name != cur_seq_name {
-                        total_seq_len += cur_seq_len;
-                        // println!("cur_seq_len: {}", cur_seq_len);
-                    } 
-                    let map_len: f64 = (map_end - map_start) * map_id;
-                    total_map_len += map_len;
-                    // println!("map_len: {}", map_len);
-                    cur_seq_name = seq_name.to_owned();
-                    cur_seq_len = seq_len;
-                }
-            }
-        }
-
-        // we have to add the last step
-        let map_len: f64 = (map_end - map_start) * map_id;
-        total_map_len += map_len;
-        total_seq_len += cur_seq_len;
-
-        // println!("total_map_len: {}", total_map_len);
-        // println!("total_seq_len: {}", total_seq_len);
-
-        let final_ratio: f64 = total_map_len / total_seq_len as f64;
-        println!("{}", final_ratio);
-    }
-
     Ok(())
-}
-
-// The output is wrapped in a Result to allow matching on errors
-// Returns an Iterator to the Reader of the lines of the file.
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
 }
