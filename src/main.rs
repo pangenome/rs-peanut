@@ -57,8 +57,20 @@ fn main() -> io::Result<()> {
     let file = File::open(gaf_filename).unwrap();
     let lines = BufReader::new(file).byte_lines().map(|l| l.unwrap());
 
-    for (i, line) in lines.enumerate() {
+    let mut cur_seq_len: usize = 0;
+    let mut cur_seq_name: String = String::from("");
+    let mut first_line_seen: bool = false;
 
+    let mut total_seq_len: usize = 0;
+    let mut total_map_len: f64 = 0.0;
+
+    let mut seq_name: String;
+    let mut seq_len: usize;
+    let mut map_start: usize = 0;
+    let mut map_end: usize = 0;
+    let mut map_id: f64 = 0.0;
+
+    for (i, line) in lines.enumerate() {
         let fields: bstr::Split = line.split_str(b"\t");
         if let Some::<GAF>(gaf) = parse_gaf(fields) {
             let opt_fields = gaf.optional;
@@ -71,7 +83,13 @@ fn main() -> io::Result<()> {
                 }
             }
             */
-            let id: f32 = get_id(&opt_fields);
+            map_id = get_id(&opt_fields) as f64;
+            // TODO Is there a faster way to do this? Seems super ugly.
+            let chars: Vec<char> = gaf.seq_name.as_bytes().chars().collect();
+            seq_name = chars.into_iter().collect();
+            seq_len = gaf.seq_len;
+            map_start = gaf.seq_range.0;
+            map_end = gaf.seq_range.1;
             /*
             println!("{}\t{}\t{}\t{}\t{}\t{}", 
                 gaf.seq_name, 
@@ -82,10 +100,34 @@ fn main() -> io::Result<()> {
                 cigar
             );
             */
+            if !first_line_seen {
+                first_line_seen = true;
+                cur_seq_name = seq_name;
+                cur_seq_len = seq_len;
+            } else {
+                if seq_name != cur_seq_name {
+                    total_seq_len += cur_seq_len;
+                }
+                let map_len: f64 = (map_end as f64 - map_start as f64) * map_id;
+                total_map_len += map_len;
+                cur_seq_name = seq_name;
+                cur_seq_len = gaf.seq_len;
+            }
         } else {
             eprintln!("Error parsing GAF line {}", i);
         }
     }
+
+    // we have to add the last step
+    let map_len: f64 = (map_end as f64 - map_start as f64) * map_id;
+    total_map_len += map_len;
+    total_seq_len += cur_seq_len;
+
+    // println!("total_map_len: {}", total_map_len);
+    // println!("total_seq_len: {}", total_seq_len);
+
+    let final_ratio: f64 = total_map_len / total_seq_len as f64;
+    println!("{}", final_ratio);
 
     // File hosts must exist in current path before this produces output
     if let Ok(lines) = read_lines(gaf_filename) {
