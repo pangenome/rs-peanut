@@ -1,3 +1,3 @@
 # peanut
 
-GAF alignment quality evaluation tool.
+GAF alignment evaluation tool.
