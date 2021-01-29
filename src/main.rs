@@ -13,36 +13,6 @@ use clap::{App, Arg};
 
 type GAF = gfa::gafpaf::GAF<OptionalFields>;
 
-fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
-    let cg = opts.get_field(b"cg")?;
-    if let OptFieldVal::Z(cg) = &cg.value {
-        CIGAR::from_bytestring(&cg)
-    } else {
-        None
-    }
-}
-
-fn eval_cigar(cigar: & gfa::cigar::CIGAR, nuc_v: &mut Vec<bool>, map_start: & usize, nuc_o: &mut usize) {
-    let cigar_iter = cigar.iter();
-    let mut idx: usize = 0;
-    for val in cigar_iter {
-        // we have seen a match!
-        use gfa::cigar::CIGAROp as Op;
-        if matches!(val, Op::E) {
-            // did we already mark this position?
-            let nuc_b = nuc_v[(idx + map_start)];
-            if nuc_b {
-                *nuc_o += 1;
-            } else {
-                nuc_v[(idx + map_start)] = true;
-            }
-        }
-        if matches!(val, Op::E | Op::M | Op::X | Op::I) {
-            idx += 1;
-        }
-    }
-}
-
 fn main() -> io::Result<()> {
     let arguments = App::new("peanut")
         .version("0.1.0")
@@ -131,4 +101,34 @@ fn main() -> io::Result<()> {
     println!("{}", final_ratio);
 
     Ok(())
+}
+
+fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
+    let cg = opts.get_field(b"cg")?;
+    if let OptFieldVal::Z(cg) = &cg.value {
+        CIGAR::from_bytestring(&cg)
+    } else {
+        None
+    }
+}
+
+fn eval_cigar(cigar: & gfa::cigar::CIGAR, nuc_v: &mut Vec<bool>, map_start: & usize, nuc_o: &mut usize) {
+    let cigar_iter = cigar.iter();
+    let mut idx: usize = 0;
+    for val in cigar_iter {
+        // we have seen a match!
+        use gfa::cigar::CIGAROp as Op;
+        if matches!(val, Op::E) {
+            // did we already mark this position?
+            let nuc_b = nuc_v[(idx + map_start)];
+            if nuc_b {
+                *nuc_o += 1;
+            } else {
+                nuc_v[(idx + map_start)] = true;
+            }
+        }
+        if matches!(val, Op::E | Op::M | Op::X | Op::I) {
+            idx += 1;
+        }
+    }
 }
