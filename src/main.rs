@@ -39,16 +39,19 @@ fn main() -> io::Result<()> {
     let mut cur_seq_len: usize = 0;
     let mut cur_seq_name: String = String::from("");
     let mut first_line_seen: bool = false;
-
-    let mut total_seq_len: usize = 0;
-    let mut total_map_len: usize = 0;
-
     let mut seq_name: String;
     let mut seq_len: usize = 0;
     let mut _map_start: usize = 0;
 
-    let mut nuc_v: Vec<bool> = vec![false; 0];
-    let mut nuc_o: usize = 0;
+    let mut total_seq_len_qsm: usize = 0;
+    let mut total_map_len_qsm: usize = 0;
+    let mut nuc_bv_qsm: Vec<bool> = vec![false; 0];
+    let mut nuc_overhead_qsm: usize = 0;
+
+    let mut total_seq_len_qsamm: usize = 0;
+    let mut total_map_len_qsamm: usize = 0;
+    let mut nuc_bv_qsamm: Vec<bool> = vec![false; 0];
+    let mut nuc_overhead_qsamm: usize = 0;
 
     for (i, line) in lines.enumerate() {
         let fields: bstr::Split = line.split_str(b"\t");
@@ -66,24 +69,48 @@ fn main() -> io::Result<()> {
                 first_line_seen = true;
                 cur_seq_name = seq_name;
                 cur_seq_len = seq_len;
-                nuc_v = vec![false; cur_seq_len];
-                eval_cigar(& cigar, &mut nuc_v, & _map_start, &mut nuc_o);
+                nuc_bv_qsm = vec![false; cur_seq_len];
+                nuc_bv_qsamm = vec![false; cur_seq_len];
+                eval_cigar(& cigar, 
+                    &mut nuc_bv_qsm, 
+                    & _map_start,
+                    &mut nuc_overhead_qsm,
+                    &mut nuc_bv_qsamm,
+                    &mut nuc_overhead_qsamm );
             } else {
                 if seq_name != cur_seq_name {
                     // finish the current one
-                    total_seq_len += cur_seq_len;
-                    total_seq_len += nuc_o;
-                    total_map_len += nuc_o;
+                    total_seq_len_qsm += cur_seq_len;
+                    total_seq_len_qsm += nuc_overhead_qsm;
+                    total_map_len_qsm += nuc_overhead_qsm;
+                    total_map_len_qsm += nuc_bv_qsm.iter().filter(|&b| *b == true).count().clone();
 
-                    total_map_len += nuc_v.iter().filter(|&b| *b == true).count().clone();
+                    total_seq_len_qsamm += cur_seq_len;
+                    total_seq_len_qsamm += nuc_overhead_qsamm;
+                    total_map_len_qsamm += nuc_overhead_qsamm;
+                    total_map_len_qsamm += nuc_bv_qsamm.iter().filter(|&b| *b == true).count().clone();
 
-                    nuc_o = 0;
-                    nuc_v = vec![false; seq_len];
+                    nuc_overhead_qsm = 0;
+                    nuc_bv_qsm = vec![false; seq_len];
+
+                    nuc_overhead_qsamm = 0;
+                    nuc_bv_qsamm = vec![false; seq_len];
+
                     cur_seq_len = seq_len;
                     cur_seq_name = seq_name;
-                    eval_cigar(& cigar, &mut nuc_v, & _map_start, &mut nuc_o);
+                    eval_cigar(& cigar, 
+                        &mut nuc_bv_qsm, 
+                        & _map_start,
+                        &mut nuc_overhead_qsm,
+                        &mut nuc_bv_qsamm,
+                        &mut nuc_overhead_qsamm );
                 } else {
-                    eval_cigar(& cigar, &mut nuc_v, & _map_start, &mut nuc_o);
+                    eval_cigar(& cigar, 
+                        &mut nuc_bv_qsm, 
+                        & _map_start,
+                        &mut nuc_overhead_qsm,
+                        &mut nuc_bv_qsamm,
+                        &mut nuc_overhead_qsamm );
                 }
             }
         } else {
@@ -92,13 +119,15 @@ fn main() -> io::Result<()> {
     }
 
     // we have to add the last step
-    total_seq_len += seq_len;
-    total_seq_len += nuc_o;
-    total_map_len += nuc_o;
-    total_map_len += nuc_v.iter().filter(|&b| *b == true).count();
+    total_seq_len_qsm += seq_len;
+    total_seq_len_qsm += nuc_overhead_qsm;
+    total_map_len_qsm += nuc_overhead_qsm;
+    total_map_len_qsm += nuc_bv_qsm.iter().filter(|&b| *b == true).count();
 
-    let final_ratio: f64 = total_map_len as f64 / total_seq_len as f64;
-    println!("{}", final_ratio);
+    let final_ratio_qsm: f64 = total_map_len_qsm as f64 / total_seq_len_qsm as f64;
+    print!("{}", final_ratio_qsm);
+    let final_ratio_qsamm: f64 = total_map_len_qsamm as f64 / total_seq_len_qsamm as f64;
+    println!("\t{}", final_ratio_qsamm);
 
     Ok(())
 }
@@ -112,7 +141,12 @@ fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
     }
 }
 
-fn eval_cigar(cigar: & gfa::cigar::CIGAR, nuc_v: &mut Vec<bool>, map_start: & usize, nuc_o: &mut usize) {
+fn eval_cigar(cigar: & gfa::cigar::CIGAR, 
+    nuc_bv_qsam: &mut Vec<bool>, 
+    map_start: & usize, 
+    nuc_overhead_qsam: &mut usize,
+    nuc_bv_qsamm: &mut Vec<bool>,
+    nuc_overhead_qsamm: &mut usize) {
     let cigar_iter = cigar.iter();
     let mut idx: usize = 0;
     for val in cigar_iter {
@@ -120,11 +154,20 @@ fn eval_cigar(cigar: & gfa::cigar::CIGAR, nuc_v: &mut Vec<bool>, map_start: & us
         use gfa::cigar::CIGAROp as Op;
         if matches!(val, Op::E) {
             // did we already mark this position?
-            let nuc_b = nuc_v[(idx + map_start)];
-            if nuc_b {
-                *nuc_o += 1;
+            let nuc_b_qsam = nuc_bv_qsam[(idx + map_start)];
+            if nuc_b_qsam {
+                *nuc_overhead_qsam += 1;
             } else {
-                nuc_v[(idx + map_start)] = true;
+                nuc_bv_qsam[(idx + map_start)] = true;
+            }
+        }
+        if matches!(val, Op::E | Op::M | Op::X) {
+            // did we already mark this position?
+            let nuc_b_qsamm = nuc_bv_qsamm[(idx + map_start)];
+            if nuc_b_qsamm {
+                *nuc_overhead_qsamm += 1;
+            } else {
+                nuc_bv_qsamm[(idx + map_start)] = true;
             }
         }
         if matches!(val, Op::E | Op::M | Op::X | Op::I) {
