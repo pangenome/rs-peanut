@@ -173,22 +173,24 @@ fn eval_cigar(
         if matches!(op, Op::E) {
             // did we already mark this position?
             for offset in 0..len {
-                let nuc_b_qsam = nuc_bv_qsam[(idx + map_start + offset as usize)];
-                if nuc_b_qsam {
-                    *nuc_overhead_qsam += 1;
-                } else {
-                    nuc_bv_qsam[(idx + map_start + offset as usize)] = true;
+                if let Some(nuc_b_qsam) = nuc_bv_qsam.get_mut(idx + map_start + offset as usize) {
+                    if *nuc_b_qsam {
+                        *nuc_overhead_qsam += 1;
+                    } else {
+                        nuc_bv_qsam[(idx + map_start + offset as usize)] = true;
+                    }
                 }
             }
         }
         if matches!(op, Op::E | Op::M | Op::X) {
             // did we already mark this position?
             for offset in 0..len {
-                let nuc_b_qsamm = nuc_bv_qsamm[(idx + map_start + offset as usize)];
-                if nuc_b_qsamm {
-                    *nuc_overhead_qsamm += 1;
-                } else {
-                    nuc_bv_qsamm[(idx + map_start + offset as usize)] = true;
+                if let Some(nuc_b_qsamm) = nuc_bv_qsamm.get_mut(idx + map_start + offset as usize) {
+                    if *nuc_b_qsamm {
+                        *nuc_overhead_qsamm += 1;
+                    } else {
+                        nuc_bv_qsamm[(idx + map_start + offset as usize)] = true;
+                    }
                 }
             }
         }
