@@ -1,7 +1,7 @@
 # peanut
 
 ## GAF alignment evaluation tool.
-`peanut` calculates alignment metrics of a given [GAF](https://github.com/lh3/gfatools/blob/master/doc/rGFA.md#the-graph-alignment-format-gaf) file from [GraphAligner](https://github.com/maickrau/GraphAligner) evaluating the [CIGAR](https://metacpan.org/pod/Bio::Cigar#CIGAR-operations) string.
+_`peanut`_ calculates alignment metrics of a given [GAF](https://github.com/lh3/gfatools/blob/master/doc/rGFA.md#the-graph-alignment-format-gaf) file from _[GraphAligner](https://github.com/maickrau/GraphAligner)_ evaluating the [CIGAR](https://metacpan.org/pod/Bio::Cigar#CIGAR-operations) string.
 It outputs two [metrics](#metrics): 
 
 1. [qsm](#query-sequence-match-(qsm)) 
@@ -41,7 +41,7 @@ cargo build --release
 ```
 
 ### example
-`peanut` requires as an input a GAF file `-g`.
+_`peanut`_ requires as an input a GAF file `-g`.
 ```
 ./target/release/peanut -g aln.gaf
 ```
@@ -54,4 +54,4 @@ The first number is the `qsm`, the second number is the `qsamm`.
 - [x] query sequence alignment match mismatch (qsamm)
 
 ## limits
-So far, it has not been tested if `peanut` also works with GAF files not originating from GraphAligner.
+So far, it has not been tested if _`peanut`_ also works with GAF files not originating from GraphAligner.
