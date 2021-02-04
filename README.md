@@ -35,7 +35,7 @@ https://jsfiddle.net/8ndx694g/
 ### building
 
 ```
-git clone https://github.com/subwaystation/rs-peanut.git
+git clone https://github.com/pangenome/rs-peanut.git
 cd rs-peanut
 cargo build --release
 ```
