@@ -148,10 +148,18 @@ fn main() -> io::Result<()> {
     }
 
     // we have to add the last step
+    total_seq_len_qsc += cur_seq_len;
+    total_map_len_qsc += nuc_bv_qsc.iter().filter(|&b| *b == true).count().clone();
+
     total_seq_len_qsm += seq_len;
     total_seq_len_qsm += nuc_overhead_qsm;
     total_map_len_qsm += nuc_overhead_qsm;
-    total_map_len_qsm += nuc_bv_qsm.iter().filter(|&b| *b == true).count();
+    total_map_len_qsm += nuc_bv_qsm.iter().filter(|&b| *b == true).count().clone();
+
+    total_seq_len_qsamm += seq_len;
+    total_seq_len_qsamm += nuc_overhead_qsm;
+    total_map_len_qsamm += nuc_overhead_qsm;
+    total_map_len_qsamm += nuc_bv_qsm.iter().filter(|&b| *b == true).count().clone();
 
     let final_ratio_qsc: f64 = total_map_len_qsc as f64 / total_seq_len_qsc as f64;
     print!("{}", final_ratio_qsc);
