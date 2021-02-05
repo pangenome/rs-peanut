@@ -52,6 +52,7 @@ The output is written to stdout in a tab-delimited format.
 The first number is the `qsm`, the second number is the `qsamm`.
 ## TODOs
 - [x] query sequence alignment match mismatch (qsamm)
+- [ ] describe `qsc`
 
 ## limits
 So far, it has not been tested if _`peanut`_ also works with GAF files not originating from GraphAligner.
