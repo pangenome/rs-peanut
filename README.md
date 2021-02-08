@@ -68,7 +68,7 @@ The first number is the `qsc`, the second number is the `qsm`, and the third num
 - [x] Add query sequence alignment match mismatch (qsamm).
 - [x] Describe `qsc`.
 - [ ] Remove non-helping metrics `qsamm` and `qsm`.
-- [ ] Add 3 new metrocs: number of `unique` query base alignments, number of `multiple` query base alignments, and number of `non`-aligned query bases
+- [ ] Add 3 new metrics: number of `unique` query base alignments, number of `multiple` query base alignments, and number of `non`-aligned query bases
 
 ## limits
 So far, it has not been tested if _`peanut`_ also works with GAF files not originating from GraphAligner.
