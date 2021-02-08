@@ -67,7 +67,6 @@ The first number is the `qsc`, the second number is the `qsm`, and the third num
 ## TODOs
 - [x] query sequence alignment match mismatch (qsamm)
 - [x] describe `qsc`
-- [ ] simplify `qsc` implementation
 
 ## limits
 So far, it has not been tested if _`peanut`_ also works with GAF files not originating from GraphAligner.
