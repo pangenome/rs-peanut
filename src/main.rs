@@ -79,26 +79,24 @@ fn main() -> io::Result<()> {
                 nuc_bv = vec![false; cur_seq_len];
                 nuc_bv_multi = vec![false; cur_seq_len];
                 eval_cigar(&cigar, &_aln_start, &mut nuc_bv, &mut nuc_bv_multi);
+            } else if seq_name != cur_seq_name {
+                // finish the current one
+                total_seq_len += cur_seq_len;
+                let aln_len: usize = nuc_bv.iter().filter(|&b| *b).count();
+                total_aln_len += aln_len;
+                let multi_aln_len: usize = nuc_bv_multi.iter().filter(|&b| *b).count();
+                total_multi_aln_len += multi_aln_len;
+                total_uniq_aln_len += aln_len - multi_aln_len;
+                total_non_aln_len += cur_seq_len - aln_len;
+
+                nuc_bv = vec![false; _seq_len];
+                nuc_bv_multi = vec![false; _seq_len];
+
+                cur_seq_len = _seq_len;
+                cur_seq_name = seq_name;
+                eval_cigar(&cigar, &_aln_start, &mut nuc_bv, &mut nuc_bv_multi);
             } else {
-                if seq_name != cur_seq_name {
-                    // finish the current one
-                    total_seq_len += cur_seq_len;
-                    let aln_len: usize = nuc_bv.iter().filter(|&b| *b == true).count();
-                    total_aln_len += aln_len;
-                    let multi_aln_len: usize = nuc_bv_multi.iter().filter(|&b| *b == true).count();
-                    total_multi_aln_len += multi_aln_len;
-                    total_uniq_aln_len += aln_len - multi_aln_len;
-                    total_non_aln_len += cur_seq_len - aln_len;
-
-                    nuc_bv = vec![false; _seq_len];
-                    nuc_bv_multi = vec![false; _seq_len];
-
-                    cur_seq_len = _seq_len;
-                    cur_seq_name = seq_name;
-                    eval_cigar(&cigar, &_aln_start, &mut nuc_bv, &mut nuc_bv_multi);
-                } else {
-                    eval_cigar(&cigar, &_aln_start, &mut nuc_bv, &mut nuc_bv_multi);
-                }
+                eval_cigar(&cigar, &_aln_start, &mut nuc_bv, &mut nuc_bv_multi);
             }
         } else {
             eprintln!("Error parsing GAF line {}", line.as_bstr());
@@ -107,9 +105,9 @@ fn main() -> io::Result<()> {
 
     // we have to add the last step
     total_seq_len += cur_seq_len;
-    let aln_len: usize = nuc_bv.iter().filter(|&b| *b == true).count();
+    let aln_len: usize = nuc_bv.iter().filter(|&b| *b).count();
     total_aln_len += aln_len;
-    let multi_aln_len: usize = nuc_bv_multi.iter().filter(|&b| *b == true).count();
+    let multi_aln_len: usize = nuc_bv_multi.iter().filter(|&b| *b).count();
     total_multi_aln_len += multi_aln_len;
     total_uniq_aln_len += aln_len - multi_aln_len;
     total_non_aln_len += cur_seq_len - aln_len;
@@ -166,3 +164,5 @@ fn eval_cigar(
         }
     }
 }
+
+// cargo fmt --all -- src/*.rs && cargo check && cargo clippy -- -D warnings && cargo build && cargo build --release
