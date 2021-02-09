@@ -2,11 +2,12 @@
 
 ## GAF alignment evaluation tool.
 _`peanut`_ calculates alignment metrics of a given [GAF](https://github.com/lh3/gfatools/blob/master/doc/rGFA.md#the-graph-alignment-format-gaf) file from _[GraphAligner](https://github.com/maickrau/GraphAligner)_ evaluating the [CIGAR](https://metacpan.org/pod/Bio::Cigar#CIGAR-operations) string.
-It outputs three [metrics](#metrics): 
+It outputs four [metrics](#metrics): 
 
 1. [qsc](#query-sequence-containment-(qsc))
-2. [qsm](#query-sequence-match-(qsm)) 
-3. [qsamm](#query-sequence-alignment-match-mismatch-(qsamm))
+2. [uniq](#unique-query-sequence-matches-(uniq)) 
+3. [multi](#multi-query-sequence-matches-(multi))
+4. [nonaln](#non-query-sequence-matches-(nonaln))
 
 ## metrics
 
@@ -15,35 +16,42 @@ It outputs three [metrics](#metrics):
 https://jsfiddle.net/8ndx694g/
 --->
 <!---
-\large qsc=\frac{(query_1\_\!\!#\!\!E) + \dots + (query_n\_\!\!#\!\!E)}{(query_1\_len) + \dots + (query_n\_len)}
+\large qsc=\frac{#\!\!E}{query\_lens}
 --->
-<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20qsc%3D%5Cfrac%7B(query_1%5C_%5C!%5C!%23%5C!%5C!E)%20%2B%20%5Cdots%20%2B%20(query_n%5C_%5C!%5C!%23%5C!%5C!E)%7D%7B(query_1%5C_len)%20%2B%20%5Cdots%20%2B%20(query_n%5C_len)%7D">
+<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20qsc%3D%5Cfrac%7B%23%5C!%5C!E%7D%7Bquery%5C_lens%7D">
 
-- `query_#E` are the number of sequence matches (`=` or `E` symbol) in the CIGAR of all GAF lines of a query. Nucleotide positions with sequence matches in multiple alignments are only counted once.
-- `query_len` is the length of the query in nucleotides.
+- `#E` are the number of sequence matches (`=` or `E` symbol) in the GAF file. Nucleotide positions with sequence matches in multiple alignments are only counted once.
+- `query_lens` is the length of all queries in the GAF in nucleotides.
 
-### query sequence match (qsm)
+### unique query sequence matches (uniq)
 <!--- 
 https://jsfiddle.net/8ndx694g/
 --->
 <!---
-\large qsm=\frac{(query_1\_\!\!#\!\!E + query_1\_multi\_\!\!#\!\!E) + \dots + (query_n\_\!\!#\!\!E + query_n\_multi\_\!\!#\!\!E)}{(query_1\_len + query_1\_multi\_\!\!#\!\!E) + \dots + (query_n\_len + query_n\_multi\_\!\!#\!\!E)}
+\large uniq=\frac{uniq\_\!\!#\!\!E}{query\_lens}
 --->
-<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20qsm%3D%5Cfrac%7B(query_1%5C_%5C!%5C!%23%5C!%5C!E%20%2B%20query_1%5C_multi%5C_%5C!%5C!%23%5C!%5C!E)%20%2B%20%5Cdots%20%2B%20(query_n%5C_%5C!%5C!%23%5C!%5C!E%20%2B%20query_n%5C_multi%5C_%5C!%5C!%23%5C!%5C!E)%7D%7B(query_1%5C_len%20%2B%20query_1%5C_multi%5C_%5C!%5C!%23%5C!%5C!E)%20%2B%20%5Cdots%20%2B%20(query_n%5C_len%20%2B%20query_n%5C_multi%5C_%5C!%5C!%23%5C!%5C!E)%7D%0A">
+<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20uniq%3D%5Cfrac%7Buniq%5C_%5C!%5C!%23%5C!%5C!E%7D%7Bquery%5C_lens%7D">
 
-- `query_#E` are the number of sequence matches (`=` or `E` symbol) in the CIGAR of all GAF lines of a query. Nucleotide positions with sequence matches in multiple alignments are only counted once.
-- `query_multi_#E` are the number of sequence matches of overlapping, multiple alignments of nucleotide positions.
-- `query_len` is the length of the query in nucleotides.
+- `uniq_#E` are the number of unique sequence matches in the GAF file. 
+- `query_lens` is the length of all queries in the GAF in nucleotides.
 
-### query sequence alignment match mismatch (qsamm)
+### multi query sequence matches (multi)
 <!--
-\large qsamm=\frac{(query_1\_\!\!#\!\!E\!\!#\!\!M\!\!#\!\!X + query_1\_multi\_\!\!#\!\!E\!\!#\!\!M\!\!#\!\!X) + \dots + (query_n\_\!\!#\!\!E\!\!#\!\!M\!\!#\!\!X + query_n\_multi\_\!\!#\!\!E\!\!#\!\!M\!\!#\!\!X)}{(query_1\_len + query_1\_multi\_\!\!#\!\!E\!\!#\!\!M\!\!#\!\!X) + \dots + (query_n\_len + query_n\_multi\_\!\!#\!\!E\!\!#\!\!M\!\!#\!\!X)}
+\large multi=\frac{multi\_\!\!#\!\!E}{query\_lens}
 --->
-<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20qsamm%3D%5Cfrac%7B(query_1%5C_%5C!%5C!%23%5C!%5C!E%5C!%5C!%23%5C!%5C!M%5C!%5C!%23%5C!%5C!X%20%2B%20query_1%5C_multi%5C_%5C!%5C!%23%5C!%5C!E%5C!%5C!%23%5C!%5C!M%5C!%5C!%23%5C!%5C!X)%20%2B%20%5Cdots%20%2B%20(query_n%5C_%5C!%5C!%23%5C!%5C!E%5C!%5C!%23%5C!%5C!M%5C!%5C!%23%5C!%5C!X%20%2B%20query_n%5C_multi%5C_%5C!%5C!%23%5C!%5C!E%5C!%5C!%23%5C!%5C!M%5C!%5C!%23%5C!%5C!X)%7D%7B(query_1%5C_len%20%2B%20query_1%5C_multi%5C_%5C!%5C!%23%5C!%5C!E%5C!%5C!%23%5C!%5C!M%5C!%5C!%23%5C!%5C!X)%20%2B%20%5Cdots%20%2B%20(query_n%5C_len%20%2B%20query_n%5C_multi%5C_%5C!%5C!%23%5C!%5C!E%5C!%5C!%23%5C!%5C!M%5C!%5C!%23%5C!%5C!X)%7D%0A">
+<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20multi%3D%5Cfrac%7Bmulti%5C_%5C!%5C!%23%5C!%5C!E%7D%7Bquery%5C_lens%7D">
 
-- `query_#E_#M_#X` are the number of sequence matches (`=` or `E` symbol), the number of alignment matches (`M` symbol), and the number of sequence mismatches (`X` symbol) in the CIGAR of all GAF lines of a query. Nucleotide positions with sequence matches, alignment matches, or sequence mismatches in multiple alignments are only counted once.
-- `query_multi_#E_#M_#X` are the number of sequence matches, the number of alignment matches, and the number of sequence mismatches of overlapping, multiple alignments of nucleotide positions.
-- `query_len` is the length of the query in nucleotides.
+- `multi_#E` are the number of multiple sequence matches in the GAF file. Nucleotide positions with more than one multiple sequence matches are only counted once.
+- `query_lens` is the length of all queries in the GAF in nucleotides.
+
+### non query sequence matches (nonaln)
+<!--
+\large nonaln=\frac{nonaln\_\!\!#\!\!E}{query\_lens}
+--->
+<img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20nonaln%3D%5Cfrac%7Bnonaln%5C_%5C!%5C!%23%5C!%5C!E%7D%7Bquery%5C_lens%7D">
+
+- `non_#E` are the number of non-sequence matches in the GAF file.
+- `query_lens` is the length of all queries in the GAF in nucleotides.
 
 ## usage
 ### building
@@ -61,14 +69,14 @@ _`peanut`_ requires as an input a GAF file `-g`.
 ```
 The output is written to stdout in a tab-delimited format.
 ```
-0.9928580500419214	0.9929122606281111	0.9970136894765463
+0.992910744238371	0.9926967987671109	0.00021394547126006352	0.007089255761628998
 ```
-The first number is the `qsc`, the second number is the `qsm`, and the third number is the `qsamm`.
+The first number is the `qsc`, the second number is the `uniq`, and the third number is the `multi`, and the fourth number is the `nonaln`.
 ## TODOs
 - [x] Add query sequence alignment match mismatch (qsamm).
 - [x] Describe `qsc`.
-- [ ] Remove non-helping metrics `qsamm` and `qsm`.
-- [ ] Add 3 new metrics: number of `unique` query base alignments, number of `multiple` query base alignments, and number of `non`-aligned query bases
+- [x] Remove non-helping metrics `qsamm` and `qsm`.
+- [x] Add 3 new metrics: number of `uniq`ue query base alignments, number of `multi`ple query base alignments, and number of `nonaln` query bases.
 
 ## limits
 So far, it has not been tested if _`peanut`_ also works with GAF files not originating from GraphAligner.
