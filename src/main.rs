@@ -52,16 +52,7 @@ fn main() -> io::Result<()> {
     let mut total_seq_len_qsc: usize = 0;
     let mut total_map_len_qsc: usize = 0;
     let mut nuc_bv_qsc: Vec<bool> = vec![false; 0];
-
-    let mut total_seq_len_qsm: usize = 0;
-    let mut total_map_len_qsm: usize = 0;
-    let mut nuc_bv_qsm: Vec<bool> = vec![false; 0];
-    let mut nuc_overhead_qsm: usize = 0;
-
-    let mut total_seq_len_qsamm: usize = 0;
-    let mut total_map_len_qsamm: usize = 0;
-    let mut nuc_bv_qsamm: Vec<bool> = vec![false; 0];
-    let mut nuc_overhead_qsamm: usize = 0;
+    let mut nuc_bv_multi_qsc: Vec<bool> = vec![false; 0];
 
     loop {
         line.clear();
@@ -83,63 +74,22 @@ fn main() -> io::Result<()> {
                 cur_seq_name = seq_name;
                 cur_seq_len = seq_len;
                 nuc_bv_qsc = vec![false; cur_seq_len];
-                nuc_bv_qsm = vec![false; cur_seq_len];
-                nuc_bv_qsamm = vec![false; cur_seq_len];
-                eval_cigar(
-                    &cigar,
-                    &mut nuc_bv_qsm,
-                    &_map_start,
-                    &mut nuc_overhead_qsm,
-                    &mut nuc_bv_qsamm,
-                    &mut nuc_overhead_qsamm,
-                    &mut nuc_bv_qsc,
-                );
+                nuc_bv_multi_qsc = vec![false; cur_seq_len];
+                eval_cigar(&cigar, &_map_start, &mut nuc_bv_qsc, &mut nuc_bv_multi_qsc);
             } else {
                 if seq_name != cur_seq_name {
                     // finish the current one
                     total_seq_len_qsc += cur_seq_len;
                     total_map_len_qsc += nuc_bv_qsc.iter().filter(|&b| *b == true).count().clone();
 
-                    total_seq_len_qsm += cur_seq_len;
-                    total_seq_len_qsm += nuc_overhead_qsm;
-                    total_map_len_qsm += nuc_overhead_qsm;
-                    total_map_len_qsm += nuc_bv_qsm.iter().filter(|&b| *b == true).count().clone();
-
-                    total_seq_len_qsamm += cur_seq_len;
-                    total_seq_len_qsamm += nuc_overhead_qsamm;
-                    total_map_len_qsamm += nuc_overhead_qsamm;
-                    total_map_len_qsamm +=
-                        nuc_bv_qsamm.iter().filter(|&b| *b == true).count().clone();
-
                     nuc_bv_qsc = vec![false; seq_len];
-
-                    nuc_overhead_qsm = 0;
-                    nuc_bv_qsm = vec![false; seq_len];
-
-                    nuc_overhead_qsamm = 0;
-                    nuc_bv_qsamm = vec![false; seq_len];
+                    nuc_bv_multi_qsc = vec![false; seq_len];
 
                     cur_seq_len = seq_len;
                     cur_seq_name = seq_name;
-                    eval_cigar(
-                        &cigar,
-                        &mut nuc_bv_qsm,
-                        &_map_start,
-                        &mut nuc_overhead_qsm,
-                        &mut nuc_bv_qsamm,
-                        &mut nuc_overhead_qsamm,
-                        &mut nuc_bv_qsc,
-                    );
+                    eval_cigar(&cigar, &_map_start, &mut nuc_bv_qsc, &mut nuc_bv_multi_qsc);
                 } else {
-                    eval_cigar(
-                        &cigar,
-                        &mut nuc_bv_qsm,
-                        &_map_start,
-                        &mut nuc_overhead_qsm,
-                        &mut nuc_bv_qsamm,
-                        &mut nuc_overhead_qsamm,
-                        &mut nuc_bv_qsc,
-                    );
+                    eval_cigar(&cigar, &_map_start, &mut nuc_bv_qsc, &mut nuc_bv_multi_qsc);
                 }
             }
         } else {
@@ -151,22 +101,8 @@ fn main() -> io::Result<()> {
     total_seq_len_qsc += cur_seq_len;
     total_map_len_qsc += nuc_bv_qsc.iter().filter(|&b| *b == true).count().clone();
 
-    total_seq_len_qsm += seq_len;
-    total_seq_len_qsm += nuc_overhead_qsm;
-    total_map_len_qsm += nuc_overhead_qsm;
-    total_map_len_qsm += nuc_bv_qsm.iter().filter(|&b| *b == true).count().clone();
-
-    total_seq_len_qsamm += seq_len;
-    total_seq_len_qsamm += nuc_overhead_qsm;
-    total_map_len_qsamm += nuc_overhead_qsm;
-    total_map_len_qsamm += nuc_bv_qsm.iter().filter(|&b| *b == true).count().clone();
-
     let final_ratio_qsc: f64 = total_map_len_qsc as f64 / total_seq_len_qsc as f64;
-    print!("{}", final_ratio_qsc);
-    let final_ratio_qsm: f64 = total_map_len_qsm as f64 / total_seq_len_qsm as f64;
-    print!("\t{}", final_ratio_qsm);
-    let final_ratio_qsamm: f64 = total_map_len_qsamm as f64 / total_seq_len_qsamm as f64;
-    println!("\t{}", final_ratio_qsamm);
+    print!("{}\n", final_ratio_qsc);
 
     Ok(())
 }
@@ -182,12 +118,9 @@ fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
 
 fn eval_cigar(
     cigar: &gfa::cigar::CIGAR,
-    nuc_bv_qsam: &mut Vec<bool>,
     map_start: &usize,
-    nuc_overhead_qsam: &mut usize,
-    nuc_bv_qsamm: &mut Vec<bool>,
-    nuc_overhead_qsamm: &mut usize,
     nuc_bv_qsc: &mut Vec<bool>,
+    nuc_bv_multi_qsc: &mut Vec<bool>,
 ) {
     let cigar_iter = cigar.iter();
     let mut idx: usize = 0;
@@ -197,24 +130,7 @@ fn eval_cigar(
         if matches!(op, Op::E) {
             // did we already mark this position?
             for offset in 0..len {
-                let nuc_b_qsam = nuc_bv_qsam[(idx + map_start + offset as usize)];
-                if nuc_b_qsam {
-                    *nuc_overhead_qsam += 1;
-                } else {
-                    nuc_bv_qsam[(idx + map_start + offset as usize)] = true;
-                }
                 nuc_bv_qsc[(idx + map_start + offset as usize)] = true;
-            }
-        }
-        if matches!(op, Op::E | Op::M | Op::X) {
-            // did we already mark this position?
-            for offset in 0..len {
-                let nuc_b_qsamm = nuc_bv_qsamm[(idx + map_start + offset as usize)];
-                if nuc_b_qsamm {
-                    *nuc_overhead_qsamm += 1;
-                } else {
-                    nuc_bv_qsamm[(idx + map_start + offset as usize)] = true;
-                }
             }
         }
         if matches!(op, Op::E | Op::M | Op::X | Op::I) {
