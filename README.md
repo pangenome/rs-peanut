@@ -50,7 +50,7 @@ https://jsfiddle.net/8ndx694g/
 --->
 <img src="https://render.githubusercontent.com/render/math?math=%5Clarge%20nonaln%3D%5Cfrac%7Bnonaln%5C_%5C!%5C!%23%5C!%5C!E%7D%7Bquery%5C_lens%7D">
 
-- `non_#E` are the number of non-sequence matches in the GAF file.
+- `nonaln_#E` are the number of non-sequence matches in the GAF file.
 - `query_lens` is the length of all queries in the GAF in nucleotides.
 
 ## usage
