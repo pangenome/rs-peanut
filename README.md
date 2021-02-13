@@ -4,10 +4,10 @@
 _`peanut`_ calculates alignment metrics of a given [GAF](https://github.com/lh3/gfatools/blob/master/doc/rGFA.md#the-graph-alignment-format-gaf) file from _[GraphAligner](https://github.com/maickrau/GraphAligner)_ evaluating the [CIGAR](https://metacpan.org/pod/Bio::Cigar#CIGAR-operations) string.
 It outputs four [metrics](#metrics): 
 
-1. [qsc](#query-sequence-containment-(qsc))
-2. [uniq](#unique-query-sequence-matches-(uniq)) 
-3. [multi](#multi-query-sequence-matches-(multi))
-4. [nonaln](#non-query-sequence-matches-(nonaln))
+1. [qsc](#query-sequence-containment-qsc)
+2. [uniq](#unique-query-sequence-matches-uniq) 
+3. [multi](#multi-query-sequence-matches-multi)
+4. [nonaln](#non-query-sequence-matches-nonaln)
 
 ## metrics
 
