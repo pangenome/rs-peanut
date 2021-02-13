@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 
 use bstr::ByteSlice;
 
@@ -13,7 +13,7 @@ use clap::{App, Arg};
 
 type GAF = gfa::gafpaf::GAF<OptionalFields>;
 
-fn main() -> io::Result<()> {
+fn main() {
     let arguments = App::new("peanut")
         .version("0.1.0")
         .author("Simon Heumos <simon.heumos@qbic.uni-tuebingen.de")
@@ -123,8 +123,6 @@ fn main() -> io::Result<()> {
 
     let ratio_non: f64 = total_non_aln_len as f64 / total_seq_len as f64;
     println!("\t{}", ratio_non);
-
-    Ok(())
 }
 
 fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
