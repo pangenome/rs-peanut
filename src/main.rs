@@ -1,5 +1,7 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::prelude::*;
+use std::io::{BufRead, BufReader, BufWriter};
+use std::path::Path;
 
 use bstr::ByteSlice;
 
@@ -24,7 +26,15 @@ fn main() {
                 .long("gaf")
                 .required(true)
                 .takes_value(true)
-                .help("Input GAF file of which to evaluate the alignment quality."),
+                .help("Input GAF file of which to evaluate the alignment quality.")        
+        )
+        .arg(
+            Arg::with_name("BED")
+                .short("b")
+                .long("bed")
+                .required(false)
+                .takes_value(true)
+                .help("Output BED file to which the regions of the non query sequence matches should be written to.")        
         )
         .get_matches();
 
@@ -38,8 +48,31 @@ fn main() {
         std::process::exit(1);
     }
 
-    let file = File::open(gaf_filename).unwrap();
-    let mut lines = BufReader::new(file);
+    let bed_filename;
+    let bed_nonaln = arguments.value_of("BED");
+    let mut do_bed_nonaln: bool = false;
+    let path: &std::path::Path;
+    let display: std::path::Display;
+    let mut bed_file_option: std::option::Option<std::fs::File> = None;
+
+    if bed_nonaln.is_some() {
+        bed_filename = bed_nonaln.unwrap();
+        do_bed_nonaln = true;
+        path = Path::new(bed_filename);
+        display = path.display();
+
+        // Open a file in write-only mode, returns `io::Result<File>`
+        bed_file_option = match File::create(&path) {
+            Err(why) => panic!(
+                "[peanut::main::error]: Couldn't create {}: {}!",
+                display, why
+            ),
+            Ok(bed_file) => Some(bed_file),
+        };
+    }
+
+    let gaf_file = File::open(gaf_filename).unwrap();
+    let mut lines = BufReader::new(gaf_file);
     let mut line: Vec<u8> = Vec::new();
 
     let mut cur_seq_len: usize = 0;
@@ -88,6 +121,11 @@ fn main() {
                 total_multi_aln_len += multi_aln_len;
                 total_uniq_aln_len += aln_len - multi_aln_len;
                 total_non_aln_len += cur_seq_len - aln_len;
+                // do we need to write to BED?
+                // TODO
+                if do_bed_nonaln {
+                    write_nonaln_to_bed(&mut bed_file_option, &nuc_bv, &cur_seq_name);
+                }
 
                 nuc_bv = vec![false; _seq_len];
                 nuc_bv_multi = vec![false; _seq_len];
@@ -99,7 +137,10 @@ fn main() {
                 eval_cigar(&cigar, &_aln_start, &mut nuc_bv, &mut nuc_bv_multi);
             }
         } else {
-            eprintln!("Error parsing GAF line {}", line.as_bstr());
+            eprintln!(
+                "[peanut::main::error]: Error parsing GAF line {}!",
+                line.as_bstr()
+            );
         }
     }
 
@@ -111,6 +152,11 @@ fn main() {
     total_multi_aln_len += multi_aln_len;
     total_uniq_aln_len += aln_len - multi_aln_len;
     total_non_aln_len += cur_seq_len - aln_len;
+    // do we need to write to BED?
+    // TODO
+    if do_bed_nonaln {
+        write_nonaln_to_bed(&mut bed_file_option, &nuc_bv, &cur_seq_name);
+    }
 
     let ratio_qsc: f64 = total_aln_len as f64 / total_seq_len as f64;
     print!("{}", ratio_qsc);
@@ -160,6 +206,41 @@ fn eval_cigar(
         if matches!(op, Op::E | Op::M | Op::X | Op::I) {
             idx += len as usize;
         }
+    }
+}
+
+fn write_nonaln_to_bed(
+    bed_file_option: &mut std::option::Option<std::fs::File>,
+    nuc_bv: &Vec<bool>,
+    cur_seq_name: &Vec<u8>,
+) {
+    let mut bed_file: &std::fs::File = bed_file_option.as_mut().unwrap();
+
+    let mut chrom_start = 0;
+    let mut chrom_end = 0;
+    let mut last_nuc_was_false = false;
+    for nuc_idx in 0..nuc_bv.len() {
+        let nuc_b: bool = nuc_bv[nuc_idx];
+        if nuc_b {
+            // we need to finish this one
+            if last_nuc_was_false {
+                match bed_file.write_all(cur_seq_name.as_bytes()) {
+                    Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
+                    Ok(_) => (),
+                }
+                match bed_file.write_all(b"\t") {
+                    Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
+                    Ok(_) => (),
+                }
+                
+            }
+        } else {
+
+        }
+    }
+    match bed_file.write_all(b"\n") {
+        Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
+        Ok(_) => (),
     }
 }
 
