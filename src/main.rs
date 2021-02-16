@@ -213,7 +213,7 @@ fn eval_cigar(
 
 fn write_nonaln_to_bed(
     bed_buf_writer_option: &mut std::option::Option<std::io::BufWriter<&mut std::fs::File>>,
-    nuc_bv: &Vec<bool>,
+    nuc_bv: &[bool],
     cur_seq_name: &Vec<u8>,
 ) {
     let bed_file: &mut std::io::BufWriter<&mut std::fs::File> =
@@ -221,65 +221,52 @@ fn write_nonaln_to_bed(
     let mut chrom_start = 0;
     let mut _chrom_end = 0;
     let mut prev_nuc_b = true;
-    for nuc_idx in 0..nuc_bv.len() {
-        let cur_nuc_b: bool = nuc_bv[nuc_idx];
+    for (nuc_idx, cur_nuc_b) in nuc_bv.iter().enumerate() {
         if prev_nuc_b && !cur_nuc_b {
             chrom_start = nuc_idx;
             _chrom_end = nuc_idx;
-        } else if !prev_nuc_b && cur_nuc_b {
+        } else if !prev_nuc_b && *cur_nuc_b {
             _chrom_end = nuc_idx;
-            match bed_file.write_all(cur_seq_name.as_bytes()) {
-                Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-                Ok(_) => (),
+            if let Err(why) = bed_file.write_all(cur_seq_name.as_bytes()) {
+                panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
             }
-            match bed_file.write_all(b"\t") {
-                Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-                Ok(_) => (),
+            if let Err(why) = bed_file.write_all(b"\t") {
+                panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
             }
-            match bed_file.write_all(chrom_start.to_string().as_bytes()) {
-                Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-                Ok(_) => (),
+            if let Err(why) = bed_file.write_all(chrom_start.to_string().as_bytes()) {
+                panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
             }
-            match bed_file.write_all(b"\t") {
-                Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-                Ok(_) => (),
+            if let Err(why) = bed_file.write_all(b"\t") {
+                panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
             }
-            match bed_file.write_all(_chrom_end.to_string().as_bytes()) {
-                Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-                Ok(_) => (),
+            if let Err(why) = bed_file.write_all(_chrom_end.to_string().as_bytes()) {
+                panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
             }
-            match bed_file.write_all(b"\n") {
-                Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-                Ok(_) => (),
+            if let Err(why) = bed_file.write_all(b"\n") {
+                panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
             }
         }
-        prev_nuc_b = cur_nuc_b;
+        prev_nuc_b = *cur_nuc_b;
     }
     if !prev_nuc_b {
         _chrom_end = nuc_bv.len();
-        match bed_file.write_all(cur_seq_name.as_bytes()) {
-            Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-            Ok(_) => (),
+        if let Err(why) = bed_file.write_all(cur_seq_name.as_bytes()) {
+            panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
         }
-        match bed_file.write_all(b"\t") {
-            Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-            Ok(_) => (),
+        if let Err(why) = bed_file.write_all(b"\t") {
+            panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
         }
-        match bed_file.write_all(chrom_start.to_string().as_bytes()) {
-            Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-            Ok(_) => (),
+        if let Err(why) = bed_file.write_all(chrom_start.to_string().as_bytes()) {
+            panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
         }
-        match bed_file.write_all(b"\t") {
-            Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-            Ok(_) => (),
+        if let Err(why) = bed_file.write_all(b"\t") {
+            panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
         }
-        match bed_file.write_all(_chrom_end.to_string().as_bytes()) {
-            Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-            Ok(_) => (),
+        if let Err(why) = bed_file.write_all(_chrom_end.to_string().as_bytes()) {
+            panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
         }
-        match bed_file.write_all(b"\n") {
-            Err(why) => panic!("[peanut::main::error]: Couldn't write to BED: {}!", why),
-            Ok(_) => (),
+        if let Err(why) = bed_file.write_all(b"\n") {
+            panic!("[peanut::main::error]: Couldn't write to BED: {}!", why);
         }
     }
 }
