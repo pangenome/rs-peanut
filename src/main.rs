@@ -48,7 +48,6 @@ fn main() {
         std::process::exit(1);
     }
 
-    let bed_filename;
     let bed_nonaln = arguments.value_of("BED");
     let mut do_bed_nonaln: bool = false;
     let path: &std::path::Path;
@@ -56,8 +55,7 @@ fn main() {
     let mut bed_file_option: std::fs::File;
     let mut bed_buf_writer_option: std::option::Option<std::io::BufWriter<&mut std::fs::File>> =
         None;
-    if bed_nonaln.is_some() {
-        bed_filename = bed_nonaln.unwrap();
+    if let Some(bed_filename) = bed_nonaln {
         do_bed_nonaln = true;
         path = Path::new(bed_filename);
         display = path.display();
@@ -214,7 +212,7 @@ fn eval_cigar(
 fn write_nonaln_to_bed(
     bed_buf_writer_option: &mut std::option::Option<std::io::BufWriter<&mut std::fs::File>>,
     nuc_bv: &[bool],
-    cur_seq_name: &Vec<u8>,
+    cur_seq_name: &[u8],
 ) {
     let bed_file: &mut std::io::BufWriter<&mut std::fs::File> =
         bed_buf_writer_option.as_mut().unwrap();
