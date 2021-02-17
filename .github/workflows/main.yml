@@ -85,3 +85,22 @@ jobs:
         with:
           command: clippy
           args: -- -D warnings
+
+  binary_tests:
+    name: Binary Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run list files
+        run: ls
+      - name: Run default usage
+        run: peanut -g data/yeast/cerevisiae.pan.fa.pggb-W-s50000-l150000-p90-n5-a0-K16-k8-w30000-j5000-e5000-I0.7-R0.consensus@10000.gfa > /home/heumos/Downloads/yeast/hmm02/cerevisiae.pan.fa.pggb-W-s50000-l150000-p90-n5-a0-K16-k8-w30000-j5000-e5000-I0.7-R0.consensus@10000.gfa.gaf

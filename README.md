@@ -9,6 +9,8 @@ It outputs four [metrics](#metrics):
 3. [multi](#multi-query-sequence-matches-multi)
 4. [nonaln](#non-query-sequence-matches-nonaln)
 
+Optionally, it writes the `nonaln` query regions to [BED](https://bedtools.readthedocs.io/en/latest/content/general-usage.html).
+
 ## metrics
 
 ### query sequence containment (qsc)
