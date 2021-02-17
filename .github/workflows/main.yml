@@ -100,7 +100,10 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Run list files
-        run: ls
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with: 
+          command: build
+          args: --release
       - name: Run default usage
-        run: peanut -g data/yeast/cerevisiae.pan.fa.pggb-W-s50000-l150000-p90-n5-a0-K16-k8-w30000-j5000-e5000-I0.7-R0.consensus@10000.gfa > data/yeast/cerevisiae.pan.fa.pggb-W-s50000-l150000-p90-n5-a0-K16-k8-w30000-j5000-e5000-I0.7-R0.consensus@10000.gfa.gaf
+        run: ./target/release/peanut -g data/yeast/cerevisiae.pan.fa.pggb-W-s50000-l150000-p90-n5-a0-K16-k8-w30000-j5000-e5000-I0.7-R0.consensus@10000.gfa > data/yeast/cerevisiae.pan.fa.pggb-W-s50000-l150000-p90-n5-a0-K16-k8-w30000-j5000-e5000-I0.7-R0.consensus@10000.gfa.gaf
