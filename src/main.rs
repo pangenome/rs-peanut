@@ -11,34 +11,34 @@ use gfa::{
     optfields::{OptFieldVal, OptFields, OptionalFields},
 };
 
-use clap::{App, Arg};
+use clap::{Arg, Command, ArgAction};
 
 type GAF = gfa::gafpaf::GAF<OptionalFields>;
 
 fn main() {
-    let arguments = App::new("peanut")
-        .version("0.1.0")
+    let arguments = Command::new("peanut")
+        .version("0.1.1")
         .author("Simon Heumos <simon.heumos@qbic.uni-tuebingen.de")
         .about("Evaluate GAF alignment quality")
         .arg(
-            Arg::with_name("GAF")
-                .short("g")
+            Arg::new("GAF")
+                .short('g')
                 .long("gaf")
                 .required(true)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .help("Input GAF file of which to evaluate the alignment quality.")        
         )
         .arg(
-            Arg::with_name("BED")
-                .short("b")
+            Arg::new("BED")
+                .short('b')
                 .long("bed")
                 .required(false)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .help("Output BED file to which the regions of the non query sequence matches should be written to.")        
         )
         .get_matches();
 
-    let gaf_filename = arguments.value_of("GAF").unwrap();
+    let gaf_filename = arguments.get_one::<String>("GAF").unwrap();
     let gaf_file_exists = std::path::Path::new(gaf_filename).exists();
     if !gaf_file_exists {
         eprintln!(
@@ -48,7 +48,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    let bed_nonaln = arguments.value_of("BED");
+    let bed_nonaln = arguments.get_one::<String>("BED");
     let mut do_bed_nonaln: bool = false;
     let path: &std::path::Path;
     let display: std::path::Display;

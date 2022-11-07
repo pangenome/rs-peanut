@@ -1,12 +1,12 @@
 [package]
 name = "peanut"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["heumos"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "2.33.0"
-bstr = "0.2"
-gfa = "0.10"
+clap = "4.0.19"
+bstr = "1.0.1"
+gfa = "0.10.1"
