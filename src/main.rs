@@ -13,7 +13,7 @@ use gfa::{
 
 use clap::{Arg, ArgAction, Command};
 
-type GAF = gfa::gafpaf::GAF<OptionalFields>;
+type Gaf = gfa::gafpaf::GAF<OptionalFields>;
 
 fn main() {
     let arguments = Command::new("peanut")
@@ -61,7 +61,7 @@ fn main() {
         display = path.display();
 
         // Open a file in write-only mode, returns `io::Result<File>`
-        bed_file_option = match File::create(&path) {
+        bed_file_option = match File::create(path) {
             Err(why) => panic!(
                 "[peanut::main::error]: Couldn't create {}: {}!",
                 display, why
@@ -97,7 +97,7 @@ fn main() {
             break;
         }
         let fields: bstr::Split = line[0..line.len()].split_str(b"\t");
-        if let Some::<GAF>(gaf) = parse_gaf(fields) {
+        if let Some::<Gaf>(gaf) = parse_gaf(fields) {
             let opt_fields = gaf.optional;
             let cigar = get_cigar(&opt_fields).unwrap();
 
@@ -174,7 +174,7 @@ fn main() {
 fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
     let cg = opts.get_field(b"cg")?;
     if let OptFieldVal::Z(cg) = &cg.value {
-        CIGAR::from_bytestring(&cg)
+        CIGAR::from_bytestring(cg)
     } else {
         None
     }
@@ -183,8 +183,8 @@ fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
 fn eval_cigar(
     cigar: &gfa::cigar::CIGAR,
     aln_start: &usize,
-    nuc_bv: &mut Vec<bool>,
-    nuc_bv_multi: &mut Vec<bool>,
+    nuc_bv: &mut [bool],
+    nuc_bv_multi: &mut [bool],
 ) {
     let cigar_iter = cigar.iter();
     let mut idx: usize = 0;
