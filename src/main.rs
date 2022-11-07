@@ -11,7 +11,7 @@ use gfa::{
     optfields::{OptFieldVal, OptFields, OptionalFields},
 };
 
-use clap::{Arg, Command, ArgAction};
+use clap::{Arg, ArgAction, Command};
 
 type GAF = gfa::gafpaf::GAF<OptionalFields>;
 
