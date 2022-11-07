@@ -11,34 +11,34 @@ use gfa::{
     optfields::{OptFieldVal, OptFields, OptionalFields},
 };
 
-use clap::{App, Arg};
+use clap::{Arg, ArgAction, Command};
 
-type GAF = gfa::gafpaf::GAF<OptionalFields>;
+type Gaf = gfa::gafpaf::GAF<OptionalFields>;
 
 fn main() {
-    let arguments = App::new("peanut")
-        .version("0.1.0")
+    let arguments = Command::new("peanut")
+        .version("0.1.1")
         .author("Simon Heumos <simon.heumos@qbic.uni-tuebingen.de")
         .about("Evaluate GAF alignment quality")
         .arg(
-            Arg::with_name("GAF")
-                .short("g")
+            Arg::new("GAF")
+                .short('g')
                 .long("gaf")
                 .required(true)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .help("Input GAF file of which to evaluate the alignment quality.")        
         )
         .arg(
-            Arg::with_name("BED")
-                .short("b")
+            Arg::new("BED")
+                .short('b')
                 .long("bed")
                 .required(false)
-                .takes_value(true)
+                .action(ArgAction::Set)
                 .help("Output BED file to which the regions of the non query sequence matches should be written to.")        
         )
         .get_matches();
 
-    let gaf_filename = arguments.value_of("GAF").unwrap();
+    let gaf_filename = arguments.get_one::<String>("GAF").unwrap();
     let gaf_file_exists = std::path::Path::new(gaf_filename).exists();
     if !gaf_file_exists {
         eprintln!(
@@ -48,7 +48,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    let bed_nonaln = arguments.value_of("BED");
+    let bed_nonaln = arguments.get_one::<String>("BED");
     let mut do_bed_nonaln: bool = false;
     let path: &std::path::Path;
     let display: std::path::Display;
@@ -61,7 +61,7 @@ fn main() {
         display = path.display();
 
         // Open a file in write-only mode, returns `io::Result<File>`
-        bed_file_option = match File::create(&path) {
+        bed_file_option = match File::create(path) {
             Err(why) => panic!(
                 "[peanut::main::error]: Couldn't create {}: {}!",
                 display, why
@@ -97,7 +97,7 @@ fn main() {
             break;
         }
         let fields: bstr::Split = line[0..line.len()].split_str(b"\t");
-        if let Some::<GAF>(gaf) = parse_gaf(fields) {
+        if let Some::<Gaf>(gaf) = parse_gaf(fields) {
             let opt_fields = gaf.optional;
             let cigar = get_cigar(&opt_fields).unwrap();
 
@@ -174,7 +174,7 @@ fn main() {
 fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
     let cg = opts.get_field(b"cg")?;
     if let OptFieldVal::Z(cg) = &cg.value {
-        CIGAR::from_bytestring(&cg)
+        CIGAR::from_bytestring(cg)
     } else {
         None
     }
@@ -183,8 +183,8 @@ fn get_cigar<T: OptFields>(opts: &T) -> Option<CIGAR> {
 fn eval_cigar(
     cigar: &gfa::cigar::CIGAR,
     aln_start: &usize,
-    nuc_bv: &mut Vec<bool>,
-    nuc_bv_multi: &mut Vec<bool>,
+    nuc_bv: &mut [bool],
+    nuc_bv_multi: &mut [bool],
 ) {
     let cigar_iter = cigar.iter();
     let mut idx: usize = 0;
